@@ -88,28 +88,28 @@ const config = {
   };
   
   var createSession = async (session) => {
-    await fetch("http://signaling.jimbo.sh:8080/createSession?id=" + sessionInput.value, {
+    await fetch("http://localhost:8080/createSession?id=" + sessionInput.value, {
       method: "POST",
       body: JSON.stringify(session)
     })
   };
   
   var setAnswerOnSession = async (session) => {
-    await fetch("http://signaling.jimbo.sh:8080/setAnswerOnSession?id=" + sessionInput.value, {
+    await fetch("http://localhost:8080/setAnswerOnSession?id=" + sessionInput.value, {
       method: "POST",
       body: JSON.stringify(session)
     })
   };
   
   var addOfferCandidate = async (candidate) => {
-    await fetch("http://signaling.jimbo.sh:8080/addOfferCandidate?id=" + sessionInput.value, {
+    await fetch("http://localhost:8080/addOfferCandidate?id=" + sessionInput.value, {
       method: "POST",
       body: JSON.stringify(candidate)
     })
   };
   
   var addAnswerCandidate = async (candidate) => {
-    await fetch("http://signaling.jimbo.sh:8080/addAnswerCandidate?id=" + sessionInput.value, {
+    await fetch("http://localhost:8080/addAnswerCandidate?id=" + sessionInput.value, {
       method: "POST",
       body: JSON.stringify(candidate)
     })
@@ -146,10 +146,10 @@ const config = {
   };
   
   let getOffers = async () => {
-    return (await fetch("http://signaling.jimbo.sh:8080/getOffers?id=" + sessionInput.value)).json()
+    return (await fetch("http://localhost:8080/getOffers?id=" + sessionInput.value)).json()
   }
   
   let getSession = async () => {
-    return (await fetch("http://signaling.jimbo.sh:8080/getSession?id=" + sessionInput.value)).json()
+    return (await fetch("http://localhost:8080/getSession?id=" + sessionInput.value)).json()
   }
   
