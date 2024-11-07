@@ -12,10 +12,9 @@ const config = {
   const pc = new RTCPeerConnection(config);
   pc.addTransceiver("audio")
   
+  let statusText = document.getElementById("signaling-status")
   pc.addEventListener('connectionstatechange', event => {
-    if (pc.connectionState === 'connected') {
-      console.log("CONNECTED")
-    }
+    statusText.innerHTML = pc.connectionState
   })
   
   let localChannel;

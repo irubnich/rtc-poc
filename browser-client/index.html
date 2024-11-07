@@ -4,11 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Test</title>
+    <style>
+      #client-btn, #send-btn {
+        width: 200px;
+        height: 200px;
+      }
+    </style>
   </head>
   <body>
-    <input id="session" type="text" value="a" />
-    <button id="client-btn">Go Client</button>
-    <button id="send-btn">Send</button>
+    <button id="client-btn">start signaling from client</button>
+    <button id="send-btn">send message over channel</button>
+    <br><br>
+    session ID: <input id="session" type="text" value="a" />
+    <br><br>
+
+    <div>
+      signaling status: <span id="signaling-status">none</span>
+    </div>
+
     <script type="module" src="/main.js"></script>
   </body>
 </html>
