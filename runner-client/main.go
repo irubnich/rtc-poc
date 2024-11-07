@@ -28,6 +28,8 @@ type Session struct {
 
 var addedOfferCandidates = []webrtc.ICECandidate{}
 
+var signalingServerURL = "https://autodiscovery-signaling.app-builder-on-prem.net"
+
 func main() {
 	config := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
@@ -114,14 +116,14 @@ func createSession(id string, offer webrtc.SessionDescription) {
 	}
 
 	body := bytes.NewBuffer(offerJSON)
-	_, err = http.Post("http://localhost:8080/createSession?id="+id, "", body)
+	_, err = http.Post(signalingServerURL+"/createSession?id="+id, "", body)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func getSession(id string) Session {
-	res, err := http.Get("http://localhost:8080/getSession?id=" + id)
+	res, err := http.Get(signalingServerURL + "/getSession?id=" + id)
 	resStr, err := io.ReadAll(res.Body)
 	if err != nil {
 		panic(err)
@@ -144,7 +146,7 @@ func addAnswerCandidate(id string, candidate *webrtc.ICECandidate) {
 	}
 
 	body := bytes.NewBuffer(candidateJSON)
-	_, err = http.Post("http://localhost:8080/addAnswerCandidate?id="+id, "", body)
+	_, err = http.Post(signalingServerURL+"/addAnswerCandidate?id="+id, "", body)
 	if err != nil {
 		panic(err)
 	}
@@ -157,7 +159,7 @@ func setAnswerOnSession(id string, answer webrtc.SessionDescription) {
 	}
 
 	body := bytes.NewBuffer(answerJSON)
-	_, err = http.Post("http://localhost:8080/setAnswerOnSession?id="+id, "", body)
+	_, err = http.Post(signalingServerURL+"/setAnswerOnSession?id="+id, "", body)
 	if err != nil {
 		panic(err)
 	}
