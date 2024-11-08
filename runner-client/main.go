@@ -58,7 +58,7 @@ func main() {
 
 	pc.OnDataChannel(func(dc *webrtc.DataChannel) {
 		dc.OnMessage(func(msg webrtc.DataChannelMessage) {
-			fmt.Printf("got msg %v\n", msg)
+			fmt.Printf("got msg: %s\n", msg.Data)
 		})
 	})
 

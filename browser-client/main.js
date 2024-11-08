@@ -1,5 +1,5 @@
-//const signalingServerURL = "https://autodiscovery-signaling.app-builder-on-prem.net"
-const signalingServerURL = "http://localhost:8080"
+const signalingServerURL = "https://autodiscovery-signaling.app-builder-on-prem.net"
+//const signalingServerURL = "http://localhost:8080"
 
 const config = {
     iceServers: [
@@ -51,13 +51,6 @@ const config = {
   
   let clientBtn = document.getElementById("client-btn");
   clientBtn.onclick = async () => {
-    pc.addEventListener('icecandidate', async event => {
-      if (event.candidate) {
-        log(`got ICE candidate: ${event.candidate.toJSON().candidate}`)
-        await addOfferCandidate(event.candidate);
-      }
-    })
-
     log(`creating offer`)
     const offerDescription = await pc.createOffer();
     await pc.setLocalDescription(offerDescription);
@@ -69,6 +62,13 @@ const config = {
   
     log(`creating session: ${sessionInput.value}`)
     await createSession(offer);
+
+    pc.addEventListener('icecandidate', async event => {
+      if (event.candidate) {
+        log(`got ICE candidate: ${event.candidate.toJSON().candidate}`)
+        await addOfferCandidate(event.candidate);
+      }
+    })
   
     pollAnswerHandle = setInterval(pollAnswer, 2000);
     pollAnswerCandidatesHandle = setInterval(pollAnswerCandidates, 2000);
