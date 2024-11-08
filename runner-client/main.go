@@ -28,7 +28,8 @@ type Session struct {
 
 var addedOfferCandidates = []webrtc.ICECandidate{}
 
-var signalingServerURL = "https://autodiscovery-signaling.app-builder-on-prem.net"
+// var signalingServerURL = "https://autodiscovery-signaling.app-builder-on-prem.net"
+var signalingServerURL = "http://localhost:8080"
 
 func main() {
 	config := webrtc.Configuration{

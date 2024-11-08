@@ -9,6 +9,14 @@
         width: 200px;
         height: 200px;
       }
+      #logs {
+        display: block;
+        height: 300px;
+        width: 800px;
+        margin-top: 20px;
+        padding: 5px;
+        background-color: lightgray;
+      }
     </style>
   </head>
   <body>
@@ -18,9 +26,8 @@
     session ID: <input id="session" type="text" value="a" />
     <br><br>
 
-    <div>
-      signaling status: <span id="signaling-status">none</span>
-    </div>
+    <code id="logs">
+    </code>
 
     <script type="module" src="/main.js"></script>
   </body>
