@@ -1,34 +1,34 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Test</title>
-    <style>
-      #client-btn, #send-btn {
-        width: 200px;
-        height: 200px;
-      }
-      #logs {
-        display: block;
-        height: 300px;
-        width: 800px;
-        margin-top: 20px;
-        padding: 5px;
-        background-color: lightgray;
-      }
-    </style>
-  </head>
-  <body>
-    <button id="client-btn">start signaling from client</button>
-    <button id="send-btn">send message over channel</button>
-    <br><br>
-    session ID: <input id="session" type="text" value="a" />
-    <br><br>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Test</title>
+        <style>
+            #client-btn,
+            #send-btn {
+                width: 200px;
+                height: 200px;
+            }
+            #logs {
+                display: block;
+                height: 300px;
+                width: 800px;
+                margin-top: 20px;
+                padding: 5px;
+                background-color: lightgray;
+            }
+        </style>
+    </head>
+    <body>
+        <button id="client-btn">start signaling</button>
+        <button id="send-btn">send message over channel</button>
+        <br /><br />
+        session ID: <input id="session" type="text" value="runner_abc" />
+        <br /><br />
 
-    <code id="logs">
-    </code>
+        <code id="logs"> </code>
 
-    <script type="module" src="/main.js"></script>
-  </body>
+        <script type="module" src="/main.js"></script>
+    </body>
 </html>

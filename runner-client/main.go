@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"slices"
 	"time"
 
@@ -20,13 +18,14 @@ type Candidate struct {
 }
 
 type Session struct {
-	Offer            Candidate             `json:"offer,omitempty"`
+	Offer            *Candidate            `json:"offer,omitempty"`
 	Answer           *Candidate            `json:"answer,omitempty"`
 	OfferCandidates  []webrtc.ICECandidate `json:"offer_candidates"`
 	AnswerCandidates []webrtc.ICECandidate `json:"answer_candidates"`
 }
 
-var addedOfferCandidates = []webrtc.ICECandidate{}
+var addedAnswerCandidates = []webrtc.ICECandidate{}
+var runnerID = "runner_abc"
 
 // var signalingServerURL = "https://autodiscovery-signaling.app-builder-on-prem.net"
 var signalingServerURL = "http://localhost:8080"
@@ -50,6 +49,19 @@ func main() {
 		}
 	}()
 
+	pc.AddTransceiverFromKind(webrtc.RTPCodecTypeAudio)
+
+	channel, err := pc.CreateDataChannel("test", nil)
+	if err != nil {
+		panic(err)
+	}
+	channel.OnOpen(func() {
+		channel.Send([]byte("test"))
+	})
+	channel.OnMessage(func(msg webrtc.DataChannelMessage) {
+		fmt.Printf("got message from browser: %s\n", msg.Data)
+	})
+
 	pc.OnConnectionStateChange(func(pcs webrtc.PeerConnectionState) {
 		if pcs == webrtc.PeerConnectionStateConnected {
 			fmt.Println("CONNECTED")
@@ -62,46 +74,46 @@ func main() {
 		})
 	})
 
-	fmt.Print("Press 'Enter' to signal")
-	if _, err = bufio.NewReader(os.Stdin).ReadBytes('\n'); err != nil {
-		panic(err)
-	}
-
-	sessionID := "a"
-
 	pc.OnICECandidate(func(i *webrtc.ICECandidate) {
 		if i != nil {
-			addAnswerCandidate(sessionID, i)
+			addOfferCandidate(runnerID, i)
 		}
 	})
 
-	session := getSession(sessionID)
-	err = pc.SetRemoteDescription(webrtc.SessionDescription{
-		Type: webrtc.NewSDPType(session.Offer.OfferType),
-		SDP:  session.Offer.SDP,
-	})
+	offer, err := pc.CreateOffer(&webrtc.OfferOptions{})
 	if err != nil {
 		panic(err)
 	}
+	err = pc.SetLocalDescription(offer)
+	if err != nil {
+		panic(err)
+	}
+	createSession(runnerID, offer)
 
-	answer, err := pc.CreateAnswer(&webrtc.AnswerOptions{})
-	if err != nil {
-		panic(err)
-	}
-	err = pc.SetLocalDescription(answer)
-	if err != nil {
-		panic(err)
-	}
-	setAnswerOnSession(sessionID, answer)
-
-	// poll for further offer candidates
+	// poll for client starting signaling
 	for {
-		session = getSession(sessionID)
-		if len(session.OfferCandidates) != len(addedOfferCandidates) {
+		session := getSession(runnerID)
+		if session.Answer != nil {
+			err := pc.SetRemoteDescription(webrtc.SessionDescription{
+				Type: webrtc.NewSDPType(session.Answer.OfferType),
+				SDP:  session.Answer.SDP,
+			})
+			if err != nil {
+				panic(err)
+			}
+			break
+		}
+		time.Sleep(1000)
+	}
+
+	// poll for further answer candidates
+	for {
+		session := getSession(runnerID)
+		if len(session.AnswerCandidates) != len(addedAnswerCandidates) {
 			for _, c := range session.OfferCandidates {
-				if !slices.Contains(addedOfferCandidates, c) {
+				if !slices.Contains(addedAnswerCandidates, c) {
 					fmt.Println("adding new offer candidate")
-					addedOfferCandidates = append(addedOfferCandidates, c)
+					addedAnswerCandidates = append(addedAnswerCandidates, c)
 					err = pc.AddICECandidate(c.ToJSON())
 				}
 			}
@@ -110,13 +122,13 @@ func main() {
 	}
 }
 
-func createSession(id string, offer webrtc.SessionDescription) {
-	offerJSON, err := json.Marshal(offer)
+func createSession(id string, localSessionDesc webrtc.SessionDescription) {
+	localSessionJSON, err := json.Marshal(localSessionDesc)
 	if err != nil {
 		panic(err)
 	}
 
-	body := bytes.NewBuffer(offerJSON)
+	body := bytes.NewBuffer(localSessionJSON)
 	_, err = http.Post(signalingServerURL+"/createSession?id="+id, "", body)
 	if err != nil {
 		panic(err)
@@ -139,7 +151,7 @@ func getSession(id string) Session {
 	return s
 }
 
-func addAnswerCandidate(id string, candidate *webrtc.ICECandidate) {
+func addOfferCandidate(id string, candidate *webrtc.ICECandidate) {
 	fmt.Println("adding candidate")
 	candidateJSON, err := json.Marshal(candidate.ToJSON())
 	if err != nil {
@@ -147,20 +159,7 @@ func addAnswerCandidate(id string, candidate *webrtc.ICECandidate) {
 	}
 
 	body := bytes.NewBuffer(candidateJSON)
-	_, err = http.Post(signalingServerURL+"/addAnswerCandidate?id="+id, "", body)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func setAnswerOnSession(id string, answer webrtc.SessionDescription) {
-	answerJSON, err := json.Marshal(answer)
-	if err != nil {
-		panic(err)
-	}
-
-	body := bytes.NewBuffer(answerJSON)
-	_, err = http.Post(signalingServerURL+"/setAnswerOnSession?id="+id, "", body)
+	_, err = http.Post(signalingServerURL+"/addOfferCandidate?id="+id, "", body)
 	if err != nil {
 		panic(err)
 	}

@@ -1,4 +1,4 @@
-//const signalingServerURL = "https://autodiscovery-signaling.app-builder-on-prem.net"
+//const signalingServerURL = "https://autodiscovery-signaling.app-builder-on-prem.net";
 const signalingServerURL = "http://localhost:8080";
 
 const config = {
@@ -25,21 +25,15 @@ pc.addEventListener("connectionstatechange", (event) => {
 let localChannel;
 
 pc.addEventListener("datachannel", (event) => {
+  localChannel = event.channel;
   event.channel.addEventListener("message", (event) => {
-    log(`got message on datachannel: ${event.data}`);
+    const decodedMsg = new TextDecoder("utf-8").decode(event.data);
+    log(`got message on datachannel: ${decodedMsg}`);
   });
 });
 
-let c = pc.createDataChannel("send");
-c.addEventListener("open", (event) => {
-  log(`data channel opened`);
-
-  localChannel = event.currentTarget;
-  c.send("hello from browser");
-});
-
 let pollAnswerHandle;
-let pollAnswerCandidatesHandle;
+let pollRemoteCandidatesHandle;
 
 let sessionInput = document.getElementById("session");
 
@@ -51,39 +45,35 @@ sendBtn.onclick = (event) => {
 
 let clientBtn = document.getElementById("client-btn");
 clientBtn.onclick = async () => {
-  log(`creating offer`);
-  const offerDescription = await pc.createOffer();
-  await pc.setLocalDescription(offerDescription);
+  log(`getting session`);
+  let session = await getSession();
 
-  const offer = {
-    sdp: offerDescription.sdp,
-    type: offerDescription.type,
+  log(`setting remote offer`);
+  await pc.setRemoteDescription(session.offer);
+
+  log(`creating answer`);
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+
+  const answerSerialized = {
+    sdp: answer.sdp,
+    type: answer.type,
   };
-
-  log(`creating session: ${sessionInput.value}`);
-  await createSession(offer);
+  await setAnswerOnSession(answerSerialized);
 
   pc.addEventListener("icecandidate", async (event) => {
     if (event.candidate) {
       log(`got ICE candidate: ${event.candidate.toJSON().candidate}`);
-      await addOfferCandidate(event.candidate);
+      await addAnswerCandidate(event.candidate);
     }
   });
 
-  pollAnswerHandle = setInterval(pollAnswer, 2000);
-  pollAnswerCandidatesHandle = setInterval(pollAnswerCandidates, 2000);
+  pollRemoteCandidatesHandle = setInterval(pollRemoteCandidates, 2000);
 };
 
-var createSession = async (session) => {
-  await fetch(`${signalingServerURL}/createSession?id=${sessionInput.value}`, {
-    method: "POST",
-    body: JSON.stringify(session),
-  });
-};
-
-var addOfferCandidate = async (candidate) => {
+var addAnswerCandidate = async (candidate) => {
   await fetch(
-    `${signalingServerURL}/addOfferCandidate?id=` + sessionInput.value,
+    `${signalingServerURL}/addAnswerCandidate?id=` + sessionInput.value,
     {
       method: "POST",
       body: JSON.stringify(candidate),
@@ -91,24 +81,13 @@ var addOfferCandidate = async (candidate) => {
   );
 };
 
-let pollAnswer = async () => {
+let pollRemoteCandidates = async () => {
   let session = await getSession();
-  if (session && session.answer) {
-    clearInterval(pollAnswerHandle);
+  if (session && session.offer_candidates.length > 0) {
+    clearInterval(pollRemoteCandidatesHandle);
 
-    const answerDesc = new RTCSessionDescription(session.answer);
-    log(`got answer!`);
-    await pc.setRemoteDescription(answerDesc);
-  }
-};
-
-let pollAnswerCandidates = async () => {
-  let session = await getSession();
-  if (session && session.answer_candidates.length > 0) {
-    clearInterval(pollAnswerCandidatesHandle);
-
-    for (const c of session.answer_candidates) {
-      log(`got answer candidate!`);
+    for (const c of session.offer_candidates) {
+      log(`got remote candidate!`);
       const candidate = new RTCIceCandidate(c);
       await pc.addIceCandidate(candidate);
     }
@@ -119,4 +98,14 @@ let getSession = async () => {
   return (
     await fetch(`${signalingServerURL}/getSession?id=` + sessionInput.value)
   ).json();
+};
+
+let setAnswerOnSession = async (answer) => {
+  return await fetch(
+    `${signalingServerURL}/setAnswerOnSession?id=` + sessionInput.value,
+    {
+      method: "POST",
+      body: JSON.stringify(answer),
+    },
+  );
 };

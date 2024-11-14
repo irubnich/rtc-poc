@@ -14,7 +14,7 @@ type Sessions struct {
 	sessions map[string]*Session
 }
 
-func (sessions *Sessions) Create(id string, candidate Candidate) *Session {
+func (sessions *Sessions) Create(id string, candidate *Candidate) *Session {
 	s := &Session{
 		Offer:            candidate,
 		Answer:           nil,
@@ -70,7 +70,7 @@ type Candidate struct {
 }
 
 type Session struct {
-	Offer            Candidate        `json:"offer,omitempty"`
+	Offer            *Candidate       `json:"offer,omitempty"`
 	Answer           *Candidate       `json:"answer,omitempty"`
 	OfferCandidates  []map[string]any `json:"offer_candidates"`
 	AnswerCandidates []map[string]any `json:"answer_candidates"`
@@ -99,7 +99,7 @@ func main() {
 			panic(err)
 		}
 
-		newSession := sessions.Create(id, candidate)
+		newSession := sessions.Create(id, &candidate)
 
 		fmt.Printf("new session: %v\n", newSession)
 
