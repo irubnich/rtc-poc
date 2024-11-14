@@ -24,27 +24,32 @@ pc.addEventListener("connectionstatechange", (event) => {
 
 let localChannel;
 
-pc.addEventListener("datachannel", (event) => {
-  localChannel = event.channel;
-  event.channel.addEventListener("message", (event) => {
-    const decodedMsg = new TextDecoder("utf-8").decode(event.data);
-    log(`got message on datachannel: ${decodedMsg}`);
-  });
-});
-
-let pollAnswerHandle;
-let pollRemoteCandidatesHandle;
-
-let sessionInput = document.getElementById("session");
-
 let sendBtn = document.getElementById("send-btn");
 sendBtn.onclick = (event) => {
   log(`sending a message over the data channel`);
   localChannel.send("hi");
 };
 
+pc.addEventListener("datachannel", (event) => {
+  localChannel = event.channel;
+  event.channel.addEventListener("message", (event) => {
+    const decodedMsg = new TextDecoder("utf-8").decode(event.data);
+    log(`got message on datachannel: ${decodedMsg}`);
+  });
+
+  localChannel.onopen = () => {
+    sendBtn.disabled = false;
+  };
+});
+
+let pollRemoteCandidatesHandle;
+
+let sessionInput = document.getElementById("session");
+
 let clientBtn = document.getElementById("client-btn");
 clientBtn.onclick = async () => {
+  clientBtn.disabled = true;
+
   log(`getting session`);
   let session = await getSession();
 

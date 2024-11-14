@@ -74,21 +74,24 @@ func main() {
 		})
 	})
 
+	offer, err := pc.CreateOffer(&webrtc.OfferOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	// create session before SetLocalDescription since ICE candidates start flowing after SetLocalDescription is called and we need a session before offer candidates are added to the session
+	createSession(runnerID, offer)
+
+	err = pc.SetLocalDescription(offer)
+	if err != nil {
+		panic(err)
+	}
+
 	pc.OnICECandidate(func(i *webrtc.ICECandidate) {
 		if i != nil {
 			addOfferCandidate(runnerID, i)
 		}
 	})
-
-	offer, err := pc.CreateOffer(&webrtc.OfferOptions{})
-	if err != nil {
-		panic(err)
-	}
-	err = pc.SetLocalDescription(offer)
-	if err != nil {
-		panic(err)
-	}
-	createSession(runnerID, offer)
 
 	// poll for client starting signaling
 	for {

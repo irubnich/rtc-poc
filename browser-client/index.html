@@ -12,7 +12,7 @@
             }
             #logs {
                 display: block;
-                height: 300px;
+                min-height: 300px;
                 width: 800px;
                 margin-top: 20px;
                 padding: 5px;
@@ -22,12 +22,12 @@
     </head>
     <body>
         <button id="client-btn">start signaling</button>
-        <button id="send-btn">send message over channel</button>
+        <button id="send-btn" disabled>send message over channel</button>
         <br /><br />
         session ID: <input id="session" type="text" value="runner_abc" />
         <br /><br />
 
-        <code id="logs"> </code>
+        <code id="logs"></code>
 
         <script type="module" src="/main.js"></script>
     </body>
