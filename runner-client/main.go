@@ -12,6 +12,8 @@ import (
 	"github.com/pion/webrtc/v4"
 )
 
+// note that this code is very similar to the web app since it also uses the WebRTC API
+
 type Candidate struct {
 	SDP       string `json:"sdp"`
 	OfferType string `json:"type"`
@@ -25,7 +27,7 @@ type Session struct {
 }
 
 var addedAnswerCandidates = []webrtc.ICECandidate{}
-var runnerID = "runner_abc"
+var runnerID = "runner_abc" // this must match what's in the "session ID" web UI input
 
 // var signalingServerURL = "https://autodiscovery-signaling.app-builder-on-prem.net"
 var signalingServerURL = "http://localhost:8080"
@@ -44,8 +46,8 @@ func main() {
 		panic(err)
 	}
 	defer func() {
-		if cErr := pc.Close(); cErr != nil {
-			panic("cannot close peer connection")
+		if err := pc.Close(); err != nil {
+			panic(err)
 		}
 	}()
 
@@ -56,6 +58,7 @@ func main() {
 		panic(err)
 	}
 	channel.OnOpen(func() {
+		fmt.Println("data channel opened, sending test message...")
 		channel.Send([]byte("test"))
 	})
 	channel.OnMessage(func(msg webrtc.DataChannelMessage) {
@@ -63,15 +66,7 @@ func main() {
 	})
 
 	pc.OnConnectionStateChange(func(pcs webrtc.PeerConnectionState) {
-		if pcs == webrtc.PeerConnectionStateConnected {
-			fmt.Println("CONNECTED")
-		}
-	})
-
-	pc.OnDataChannel(func(dc *webrtc.DataChannel) {
-		dc.OnMessage(func(msg webrtc.DataChannelMessage) {
-			fmt.Printf("got msg: %s\n", msg.Data)
-		})
+		fmt.Printf("new connection state: %s\n", pcs)
 	})
 
 	offer, err := pc.CreateOffer(&webrtc.OfferOptions{})
@@ -79,7 +74,8 @@ func main() {
 		panic(err)
 	}
 
-	// create session before SetLocalDescription since ICE candidates start flowing after SetLocalDescription is called and we need a session before offer candidates are added to the session
+	// we must create a session before SetLocalDescription is called since ICE candidates start coming in right after that
+	// and we need a session that we can attach these ICE candidates to
 	createSession(runnerID, offer)
 
 	err = pc.SetLocalDescription(offer)
@@ -93,7 +89,7 @@ func main() {
 		}
 	})
 
-	// poll for client starting signaling
+	// poll until we have an answer from the web UI
 	for {
 		session := getSession(runnerID)
 		if session.Answer != nil {
@@ -109,15 +105,18 @@ func main() {
 		time.Sleep(1000)
 	}
 
-	// poll for further answer candidates
+	// this makes the server run forever, polling for further ICE candidates as they come in from the web UI
 	for {
 		session := getSession(runnerID)
 		if len(session.AnswerCandidates) != len(addedAnswerCandidates) {
 			for _, c := range session.OfferCandidates {
 				if !slices.Contains(addedAnswerCandidates, c) {
-					fmt.Println("adding new offer candidate")
+					fmt.Println("received new answer candidate")
 					addedAnswerCandidates = append(addedAnswerCandidates, c)
 					err = pc.AddICECandidate(c.ToJSON())
+					if err != nil {
+						panic(err)
+					}
 				}
 			}
 		}
@@ -155,7 +154,6 @@ func getSession(id string) Session {
 }
 
 func addOfferCandidate(id string, candidate *webrtc.ICECandidate) {
-	fmt.Println("adding candidate")
 	candidateJSON, err := json.Marshal(candidate.ToJSON())
 	if err != nil {
 		panic(err)

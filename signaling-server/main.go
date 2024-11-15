@@ -10,6 +10,8 @@ import (
 )
 
 type Sessions struct {
+	// mutex is needed to ensure that session updates happen atomically
+	// ICE candidates are sometimes sent in rapid succession and we need to make sure they are all added to the session without race conditions
 	mu       sync.Mutex
 	sessions map[string]*Session
 }
